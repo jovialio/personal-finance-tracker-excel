@@ -1,0 +1,7 @@
+# Excel lock files
+~$*.xlsx
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
