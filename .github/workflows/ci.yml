@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Scan repository for secrets
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest \
+            detect --source /repo --redact --exit-code 1 --no-git
+
+  validate:
+    name: Validate workbook package
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Parse workflow YAML
+        run: |
+          set -euo pipefail
+
+          ruby -e 'require "yaml"; Dir[".github/workflows/*.yml"].sort.each { |file| YAML.load_file(file); puts "Parsed #{file}" }'
+
+      - name: Validate workbook file
+        id: workbook
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          workbooks=(Personal\ Finance\ Tracker\ v*.xlsx)
+
+          if [ "${#workbooks[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one workbook named 'Personal Finance Tracker v*.xlsx', found ${#workbooks[@]}."
+            printf 'Matched workbook files:\n'
+            printf ' - %s\n' "${workbooks[@]}"
+            exit 1
+          fi
+
+          workbook="${workbooks[0]}"
+          filename="${workbook##*/}"
+
+          if [[ ! "$filename" =~ ^Personal\ Finance\ Tracker\ (v[0-9]+(\.[0-9]+)*)\.xlsx$ ]]; then
+            echo "::error file=$filename::Workbook filename must use a final version tag like 'Personal Finance Tracker v1.2.xlsx'."
+            exit 1
+          fi
+
+          tag="${BASH_REMATCH[1]}"
+          versioned_asset="Personal.Finance.Tracker.$tag.xlsx"
+          stable_asset="Personal.Finance.Tracker.xlsx"
+
+          {
+            echo "workbook=$workbook"
+            echo "tag=$tag"
+            echo "versioned_asset=$versioned_asset"
+            echo "stable_asset=$stable_asset"
+          } >> "$GITHUB_OUTPUT"
+
+          unzip -t "$workbook"
+
+      - name: Validate README links and assets
+        env:
+          STABLE_ASSET: ${{ steps.workbook.outputs.stable_asset }}
+        run: |
+          set -euo pipefail
+
+          stable_url="https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/$STABLE_ASSET"
+
+          if ! grep -Fq "$stable_url" README.md; then
+            echo "::error file=README.md::README must link to the stable latest-download workbook URL: $stable_url"
+            exit 1
+          fi
+
+          if grep -Eq 'releases/latest/download/Personal\.Finance\.Tracker\.v[0-9]' README.md; then
+            echo "::error file=README.md::README must not use a version-pinned asset under releases/latest/download."
+            exit 1
+          fi
+
+          ruby <<'RUBY'
+          readme = File.read("README.md")
+          missing = []
+
+          readme.scan(/!\[[^\]]*\]\(([^)]+)\)/).flatten.each do |target|
+            next if target.match?(/\A[a-z][a-z0-9+.-]*:/i)
+            missing << target unless File.file?(target)
+          end
+
+          if missing.any?
+            warn "::error file=README.md::README references missing local image assets: #{missing.join(", ")}"
+            exit 1
+          end
+
+          puts "README local image assets exist."
+          RUBY
+
+      - name: Validate release asset preparation
+        env:
+          WORKBOOK: ${{ steps.workbook.outputs.workbook }}
+          VERSIONED_ASSET: ${{ steps.workbook.outputs.versioned_asset }}
+          STABLE_ASSET: ${{ steps.workbook.outputs.stable_asset }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+          cp "$WORKBOOK" "dist/$VERSIONED_ASSET"
+          cp "$WORKBOOK" "dist/$STABLE_ASSET"
+
+          unzip -t "dist/$VERSIONED_ASSET"
+          unzip -t "dist/$STABLE_ASSET"
