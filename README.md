@@ -21,7 +21,7 @@ Most finance spreadsheets are either a simple budget or an intimidating investme
 
 ## Quick start
 
-1. Download **Personal Finance Tracker v1.1.xlsx** and open it in Excel (LibreOffice works too).
+1. [Download the latest workbook](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx) and open it in Excel (LibreOffice works too).
 2. Read the **Start Here** tab — it is the manual.
 3. Everything ships with a coherent fictional example (a 42-year-old investing since 2019) so every formula shows a working result. Follow the *Resetting the Sample Data* checklist on Start Here to make it yours.
 4. Yellow cells are yours to edit; everything else is formulas. Formula-heavy sheets are protected against accidents — no password, `Review → Unprotect Sheet` if you ever need to.
