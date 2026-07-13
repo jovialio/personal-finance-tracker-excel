@@ -95,7 +95,7 @@ The stable download URL should not change between releases:
 https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx
 ```
 
-Pull request CI validates the workbook filename, XLSX package integrity, README assets, stable download link, workflow YAML, and release asset preparation before merge.
+Pull request CI runs a secret scan and validates the workbook filename, XLSX package integrity, README assets, stable download link, workflow YAML, and release asset preparation before merge.
 
 ## License
 

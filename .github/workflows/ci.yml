@@ -10,14 +10,37 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
-    name: Validate workbook package
+  secret-scan:
+    name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Scan repository for secrets
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest \
+            detect --source /repo --redact --exit-code 1 --no-git
+
+  validate:
+    name: Validate workbook package
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
 
       - name: Parse workflow YAML
         run: |
