@@ -76,7 +76,9 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 
 ## Maintainer release flow
 
-Future releases are automated from `v*` tags. For a new version:
+Future releases are automated from final-version `v*` tags such as `v1.2` or `v1.2.3`. Prerelease suffixes such as `v1.2-rc1` are intentionally rejected so the stable latest-download URL never points at an RC or beta workbook.
+
+For a new version:
 
 1. Rename the workbook in this repo to match the tag, for example `Personal Finance Tracker v1.2.xlsx`.
 2. Commit the workbook and README changes to `main`.

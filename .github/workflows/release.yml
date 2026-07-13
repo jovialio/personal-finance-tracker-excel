@@ -35,8 +35,8 @@ jobs:
             tag="$REF_NAME"
           fi
 
-          if ! printf '%s\n' "$tag" | grep -Eq '^v[0-9]+(\.[0-9]+)*([-.][0-9A-Za-z.-]+)?$'; then
-            echo "::error::Release tag must look like v1.2 or v1.2.3, got '$tag'."
+          if ! printf '%s\n' "$tag" | grep -Eq '^v[0-9]+(\.[0-9]+)*$'; then
+            echo "::error::Release tag must be a final version like v1.2 or v1.2.3, got '$tag'. Prerelease suffixes are intentionally rejected so the stable latest-download asset never points at an RC or beta workbook."
             exit 1
           fi
 
