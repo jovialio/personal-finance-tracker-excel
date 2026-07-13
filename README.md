@@ -15,13 +15,13 @@ Most finance spreadsheets are either a simple budget or an intimidating investme
 | Level | Tabs | What you get |
 |---|---|---|
 | 🟩 **1 — Foundations** (~15 min) | Settings · Balance Sheet · Cash Flow · Net Worth History | Net worth, asset allocation, emergency-fund months, measured savings rate — with red/amber/green status checks |
-| 🟦 **2 — Life Planning** | Insurance · Housing · Loan Calculator · Retirement Plan | Retirement readiness %, your FI number, mortgage amortisation, CPF refund on sale, projections to age 85 at 3/5/8% growth |
+| 🟦 **2 — Life Planning** | Insurance · Housing · Loan Calculator · Retirement Plan · Savings Goal Calculator | Retirement readiness %, your FI number, mortgage amortisation, CPF refund on sale, projections to age 85 at 3/5/8% growth, plus a goal-based savings calculator |
 | 🟪 **3 — Portfolio Management** | Transactions · Prices · Stock Dashboard · Portfolio History | XIRR (true annual return), dividends, top holdings, concentration & data-quality checks, contribution-adjusted monthly returns |
 | ⬜ **Engine room** | Shares · All Ticker P&L · Portfolio Analysis | Fully automatic — look, don't edit |
 
 ## Quick start
 
-1. Download **Personal Finance Tracker v1.0.xlsx** and open it in Excel (LibreOffice works too).
+1. Download **Personal Finance Tracker v1.1.xlsx** and open it in Excel (LibreOffice works too).
 2. Read the **Start Here** tab — it is the manual.
 3. Everything ships with a coherent fictional example (a 42-year-old investing since 2019) so every formula shows a working result. Follow the *Resetting the Sample Data* checklist on Start Here to make it yours.
 4. Yellow cells are yours to edit; everything else is formulas. Formula-heavy sheets are protected against accidents — no password, `Review → Unprotect Sheet` if you ever need to.
@@ -69,6 +69,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - Historic FX for the XIRR uses current rates (documented on the Portfolio Analysis tab).
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
+
+## What's new in v1.1
+
+- **Savings Goal Calculator** (Level 2) — a goal-based compound-growth planner. Solve for any one unknown: the final amount you'll reach, the return you'd need, how many years to save, or the lump sum / annual amount to set aside for a goal. Contributions compound at the start of each year (annuity-due), and the expected-return cells pull from your Settings growth assumptions, with a one-cell override for quick what-ifs. Built entirely from Excel's own `FV` / `RATE` / `NPER` / `PMT` / `PV` functions — no macros, no add-ins.
 
 ## License
 
