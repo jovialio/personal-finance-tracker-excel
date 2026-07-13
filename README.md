@@ -74,6 +74,25 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 
 - **Savings Goal Calculator** (Level 2) — a goal-based compound-growth planner. Solve for any one unknown: the final amount you'll reach, the return you'd need, how many years to save, or the lump sum / annual amount to set aside for a goal. Contributions compound at the start of each year (annuity-due), and the expected-return cells pull from your Settings growth assumptions, with a one-cell override for quick what-ifs. Built entirely from Excel's own `FV` / `RATE` / `NPER` / `PMT` / `PV` functions — no macros, no add-ins.
 
+## Maintainer release flow
+
+Future releases are automated from `v*` tags. For a new version:
+
+1. Rename the workbook in this repo to match the tag, for example `Personal Finance Tracker v1.2.xlsx`.
+2. Commit the workbook and README changes to `main`.
+3. Tag the release commit, for example `git tag v1.2 && git push origin main v1.2`.
+
+The release workflow uploads two assets:
+
+- `Personal.Finance.Tracker.v1.2.xlsx` — the version-pinned workbook.
+- `Personal.Finance.Tracker.xlsx` — the stable latest-download alias used by README and blog links.
+
+The stable download URL should not change between releases:
+
+```text
+https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx
+```
+
 ## License
 
 [MIT](LICENSE) — free to use, modify and share, including commercially, with attribution.
