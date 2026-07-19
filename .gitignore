@@ -5,3 +5,6 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Personal test workbooks (contain real financial data — never commit)
+*_Test*.xlsx

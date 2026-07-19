@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.4
+
+- **Pasting a batch of transactions now works.** The four helper columns on **Transactions** (Key, Signed Units, Buy Cost, Sell Proceeds) are pre-filled with formulas down to row 1000. Previously they existed only for the 20 sample rows, so pasting a block of transactions left **Key** blank on every pasted row — and with no Key those transactions were invisible to All Ticker P&L, Shares, the Stock Dashboard and the Prices sync panel. Blank rows now show nothing instead of `0`.
+
 ## What's new in v1.3
 
 - **Prices “Ticker Sync” panel** (Level 3) — a live checklist beside the price list that keeps your prices in step with what you actually hold. It reads your current positions and flags, in green/red, any ticker you’ve bought that’s missing from Prices (**ADD TO PRICES**) and any price row you’ve fully sold out of (**NOT HELD**), with **Missing** / **Stale** counters at the top. You still type prices, notes and categories yourself — the panel never edits your data, it just points you to the one row to add or remove. The stale sample tickers were also removed so the price list matches the sample holdings exactly.
