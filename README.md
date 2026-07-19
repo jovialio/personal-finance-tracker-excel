@@ -74,6 +74,8 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 
 - **Prices “Ticker Sync” panel** (Level 3) — a live checklist beside the price list that keeps your prices in step with what you actually hold. It reads your current positions and flags, in green/red, any ticker you’ve bought that’s missing from Prices (**ADD TO PRICES**) and any price row you’ve fully sold out of (**NOT HELD**), with **Missing** / **Stale** counters at the top. You still type prices, notes and categories yourself — the panel never edits your data, it just points you to the one row to add or remove. The stale sample tickers were also removed so the price list matches the sample holdings exactly.
 
+- **Consistent input highlighting on Prices** — every cell you fill in (Key, Exchange, Symbol, Currency, Current Price, Notes, Category) now carries the same faint-yellow input shading, so it is obvious at a glance what is yours to type. Only the calculated **FX to SGD** column is left unshaded.
+
 ## What's new in v1.1
 
 - **Savings Goal Calculator** (Level 2) — a goal-based compound-growth planner. Solve for any one unknown: the final amount you'll reach, the return you'd need, how many years to save, or the lump sum / annual amount to set aside for a goal. Contributions compound at the start of each year (annuity-due), and the expected-return cells pull from your Settings growth assumptions, with a one-cell override for quick what-ifs. Built entirely from Excel's own `FV` / `RATE` / `NPER` / `PMT` / `PV` functions — no macros, no add-ins.
