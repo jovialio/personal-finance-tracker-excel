@@ -103,6 +103,10 @@ https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/downl
 
 Pull request CI runs a secret scan and validates the workbook filename, XLSX package integrity, README assets, stable download link, workflow YAML, and release asset preparation before merge.
 
+## About
+
+I'm Dennis — I built this to answer my own money questions, then kept refining it until it was worth sharing. I write about the thinking behind it, and what I'm building next, at [blog.synvest.life](https://blog.synvest.life).
+
 ## License
 
 [MIT](LICENSE) — free to use, modify and share, including commercially, with attribution.
