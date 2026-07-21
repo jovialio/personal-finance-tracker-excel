@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.5
+
+- **Portfolio Analysis is now immune to inserted rows.** It previously read the ledger with 6,000 positional references (`Transactions!J2`, `J3`, …). Inserting rows into Transactions shifted those references, so the inserted rows were skipped entirely — the XIRR and the Stock Dashboard's return figure were then computed from only the rows that happened to still line up. Each row is now resolved with a position-independent `INDEX(Transactions!$J:$J, ROW()-8)` lookup, so typing, pasting **or inserting** rows all work correctly.
+
 ## What's new in v1.4
 
 - **Pasting a batch of transactions now works.** The four helper columns on **Transactions** (Key, Signed Units, Buy Cost, Sell Proceeds) are pre-filled with formulas down to row 1000. Previously they existed only for the 20 sample rows, so pasting a block of transactions left **Key** blank on every pasted row — and with no Key those transactions were invisible to All Ticker P&L, Shares, the Stock Dashboard and the Prices sync panel. Blank rows now show nothing instead of `0`.
