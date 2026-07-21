@@ -70,6 +70,12 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.6
+
+- **The cash-flow engine moved into the ledger table.** `FX to SGD`, `Flow SGD` and `Dividend SGD` are now calculated columns on **Transactions**. Table columns grow with your data, so dividends, net-invested and every `SUMIFS` that used to read a fixed 1,000-row block are no longer capped at all.
+- **FX is resolved from each transaction's own Currency**, not by looking its ticker up in Prices. Previously, deleting a sold-out ticker from Prices silently dropped the currency conversion on that ticker's past transactions — quietly skewing XIRR for anyone holding foreign-currency positions.
+- **Capacity is now visible.** XIRR still needs one contiguous block (Excel won't accept a union reference there), so it keeps a mirror — raised to 10,000 transactions, with a banner in `Transactions!R1` reporting usage and warning loudly rather than failing silently.
+
 ## What's new in v1.5
 
 - **Portfolio Analysis is now immune to inserted rows.** It previously read the ledger with 6,000 positional references (`Transactions!J2`, `J3`, …). Inserting rows into Transactions shifted those references, so the inserted rows were skipped entirely — the XIRR and the Stock Dashboard's return figure were then computed from only the rows that happened to still line up. Each row is now resolved with a position-independent `INDEX(Transactions!$J:$J, ROW()-8)` lookup, so typing, pasting **or inserting** rows all work correctly.
