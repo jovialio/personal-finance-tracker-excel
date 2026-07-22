@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.9
+
+- **Transactions now catches the paste trap.** The helper columns (J–P: Key, units, cost, flow) are derived formulas the rest of the workbook depends on. Pasting a data block *over* them blanks them, which silently hides those transactions from the Dashboard, Shares and Prices. Cell `R1` on Transactions now shows a **red warning** — with the exact count of affected rows — whenever any row has an Exchange/Symbol/Currency but no Key, so the failure is impossible to miss. Start Here now says plainly: **paste only into columns A–I.**
+
 ## What's new in v1.8
 
 - **Version numbering aligned.** The Start Here change log now uses the public release numbers (v1.x) that match the GitHub releases and the workbook filename, instead of a parallel internal build count. The previously-missing v1.2 entry is restored here and on Start Here.
