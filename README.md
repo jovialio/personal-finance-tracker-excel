@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.10
+
+- **Plain paste guidance instead of a warning banner.** v1.9's `R1` self-check is reverted to the simple capacity indicator. In its place, Start Here now explains directly: **paste new transactions only into columns A–I** (never over the J–P helper formulas), and if J–P ever go blank, select a filled row and drag them down. Short pointers were added on the Transactions sheet and beside the Prices TICKER SYNC panel, which also gained a plain-language 'how to use this panel' note.
+
 ## What's new in v1.9
 
 - **Transactions now catches the paste trap.** The helper columns (J–P: Key, units, cost, flow) are derived formulas the rest of the workbook depends on. Pasting a data block *over* them blanks them, which silently hides those transactions from the Dashboard, Shares and Prices. Cell `R1` on Transactions now shows a **red warning** — with the exact count of affected rows — whenever any row has an Exchange/Symbol/Currency but no Key, so the failure is impossible to miss. Start Here now says plainly: **paste only into columns A–I.**
