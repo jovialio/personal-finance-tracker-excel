@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.7
+
+- **A single CAPACITY & LIMITS section on Start Here.** The workbook's real limits — Excel's 1,048,576-row grid, the 10,000-trade XIRR ceiling and its live `R1` capacity banner, and the ~500-holding Prices panel — are now documented in one place, with the one rule for spotting a cap before it misleads you, instead of being scattered through the change notes.
+
 ## What's new in v1.6
 
 - **The cash-flow engine moved into the ledger table.** `FX to SGD`, `Flow SGD` and `Dividend SGD` are now calculated columns on **Transactions**. Table columns grow with your data, so dividends, net-invested and every `SUMIFS` that used to read a fixed 1,000-row block are no longer capped at all.
