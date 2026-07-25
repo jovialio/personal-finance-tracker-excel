@@ -70,6 +70,10 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## What's new in v1.11
+
+- **Start Here clarity pass.** Corrected the FX guidance (you set FX rates on Settings; the Prices FX column fills itself in), scoped the capacity note to what cell R1 actually shows, split the dense Transactions paste caution onto its own line, and removed a duplicated panel-capacity note. The in-sheet version-history list was also dropped to keep the tab uncluttered.
+
 ## What's new in v1.10
 
 - **Plain paste guidance instead of a warning banner.** v1.9's `R1` self-check is reverted to the simple capacity indicator. In its place, Start Here now explains directly: **paste new transactions only into columns A–I** (never over the J–P helper formulas), and if J–P ever go blank, select a filled row and drag them down. Short pointers were added on the Transactions sheet and beside the Prices TICKER SYNC panel, which also gained a plain-language 'how to use this panel' note.
