@@ -2,6 +2,10 @@
 
 All notable changes to the Personal Finance Tracker workbook. The latest version is always available from the [releases page](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx).
 
+## v1.12
+
+- **Cost basis resets on a full sell-and-rebuy.** On **Shares**, `Total Buy Cost` (and `Total Sell Proceeds`) now count only the transactions since a ticker's position last returned to zero — so the average cost of a re-acquired holding reflects what you paid *this* time round, not a blend with a previously closed position. Overall P&L on Shares follows suit (current-cycle), while **All Ticker P&L** keeps the lifetime figure. Driven by a new `Running Units` helper column on Transactions, built with plain `SUMPRODUCT`/`LOOKUP` (no `LET`) so it works in Excel and LibreOffice. Shares also gains an **Average Buy Cost** column showing the average price paid per unit in the current cycle — buy cost ÷ units *bought*, so a partial sell no longer distorts it. The reset formulas and the Transactions helper columns now span the full 10,000-transaction capacity (previously capped at 1,000). For a rebought ticker, enter its transactions in date order so the reset lands at the right point.
+
 ## v1.11
 
 - **Start Here clarity pass.** Corrected the FX guidance (you set FX rates on Settings; the Prices FX column fills itself in), scoped the capacity note to what cell R1 actually shows, split the dense Transactions paste caution onto its own line, and removed a duplicated panel-capacity note. The in-sheet version-history list was also dropped to keep the tab uncluttered.
