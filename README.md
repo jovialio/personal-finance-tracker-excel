@@ -46,6 +46,8 @@ One transactions table drives the entire portfolio layer. Four action codes:
 
 Tickers use a `Exchange:Symbol:Currency` key (e.g. `USX:AMD:USD`). Anything can be a ticker — the sample tracks physical gold as `CA:GOLD:SGD`, and you can do the same for CPF or bonds. The ledger handles multiple currencies (SGD/USD/HKD out of the box; add more in Settings).
 
+Paste or cut/paste transaction values only within columns **A:I**. The 10,000-row `Txn` table keeps its calculated helpers in **J:R**, so normal A:I edits cannot shift the ranges used by Shares. Average buy cost resets when a ticker is fully sold and later re-acquired; same-day transactions follow their physical row order.
+
 ![Stock Dashboard](images/stock-dashboard.png)
 
 ## What gets calculated for you
