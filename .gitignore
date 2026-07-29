@@ -8,3 +8,9 @@ desktop.ini
 
 # Personal test workbooks (contain real financial data — never commit)
 *_Test*.xlsx
+
+# Private / stealth planning & development — do not publish
+private/
+
+# Session scratch artifacts
+outputs/
