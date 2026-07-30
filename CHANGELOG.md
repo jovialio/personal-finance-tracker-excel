@@ -2,6 +2,10 @@
 
 All notable changes to the Personal Finance Tracker workbook. The latest version is always available from the [releases page](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx).
 
+## v1.14.1
+
+- **Dividend totals are now consistent with the FX rate override.** `All Ticker P&L` computed its per-ticker `Dividends SGD` as `SUM(local dividend amounts) × current FX`, so it ignored the per-transaction `FX Rate` entered in v1.14 and could disagree with the `Dividends collected, all time (SGD)` figure on the Stock Dashboard. It now sums the Transactions `Dividend SGD` helper column directly with a whole-column `SUMIFS`, so it reflects the actual rate recorded on each dividend and matches the Stock Dashboard and XIRR. As a bonus the range is no longer capped at ~1,000 rows. No layout change.
+
 ## v1.14
 
 - **Per-transaction FX rate, and a fee field.** Two optional input columns on **Transactions**: **FX Rate** and **Fee**. Record the actual rate you converted at for a foreign-currency trade in `FX Rate` (SGD per 1 unit of the transaction's currency — e.g. `1.35` for a USD buy) and that transaction's SGD conversion uses *your* rate instead of today's rate applied to an old purchase; `Flow SGD`, net-invested and **XIRR** follow suit, so your SGD money-weighted return reflects the real currency gain/loss rather than a naive current-rate proxy. Leave `FX Rate` blank and nothing changes — it falls back to the current Settings rate, so existing workbooks are unaffected. `Fee` is a free field you can reference in your own `Total after fees` formula if you wish; the tracker does not fold it into cost basis. To make room, the ledger's calculated helpers and the capacity banner shifted right (inputs are now columns **A–K**, helpers **L–U**, banner cell **`V1`**); Start Here was updated to match. This is a data-layout (schema) change.
