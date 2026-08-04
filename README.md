@@ -16,7 +16,7 @@ Most finance spreadsheets are either a simple budget or an intimidating investme
 |---|---|---|
 | 🟩 **1 — Foundations** (~15 min) | Settings · Balance Sheet · Cash Flow · Net Worth History | Net worth, asset allocation, emergency-fund months, measured savings rate — with red/amber/green status checks |
 | 🟦 **2 — Life Planning** | Insurance · Housing · Loan Calculator · Retirement Plan · Savings Goal Calculator | Retirement readiness %, your FI number, mortgage amortisation, projections to age 85 at 3/5/8% growth, plus a goal-based savings calculator |
-| 🟪 **3 — Portfolio Management** | Transactions · Prices · Stock Dashboard · Portfolio History | XIRR (true annual return), dividends, top holdings, concentration & data-quality checks, contribution-adjusted monthly returns |
+| 🟪 **3 — Portfolio Management** | Transactions · Prices · Stock Dashboard · Allocation · Portfolio History | XIRR (true annual return), dividends, top holdings, concentration & data-quality checks, contribution-adjusted monthly returns, three-lens allocation (Total / Investible / Risk) |
 | ⬜ **Engine room** | Shares · All Ticker P&L · Portfolio Analysis | Fully automatic — look, don't edit |
 
 ## Quick start
@@ -53,6 +53,7 @@ Paste or cut/paste transaction values only within columns **A:I**. The 10,000-ro
 ## What gets calculated for you
 
 - **Portfolio XIRR** — money-weighted annual return since inception, dividends included, from your actual dated cash flows.
+- **Allocation across three lenses** — each holding and asset class as a % of Total assets, Investible and Risk, driven by two editable maps (category → class, class → lens) so adding a category never means editing summary rows.
 - **Retirement projection to age 85** — three growth scenarios; savings stop at your retirement age and inflation-adjusted withdrawals begin; CPF/SRS/endowment unlocks flow in at the ages you set. Your retirement-age row highlights automatically.
 - **Retirement readiness %** — projected assets at retirement vs your FI number (target income ÷ safe withdrawal rate).
 - **Housing** — full amortisation schedule, including your property value, mortgage balance and equity share.
