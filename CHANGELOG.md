@@ -2,6 +2,10 @@
 
 All notable changes to the Personal Finance Tracker workbook. The latest version is always available from the [releases page](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx).
 
+## v1.15
+
+- **New Allocation tab — three-lens portfolio weighting.** A dedicated `Allocation` worksheet showing each holding and asset class as a % of three lenses: **Total assets** (everything, incl. property), **Investible** (total − real estate), and **Risk** (equity + REIT only). It reads live market values, prices, average cost and categories straight from `Shares` (one row per holding, so nothing is silently dropped, and an unmapped category is flagged `UNMAPPED` rather than omitted). Classification is driven by two small editable maps on the tab — `Category → Asset Class` and `Asset Class → lens` — so adding a category never means hand-editing summary rows. Non-stock assets (property, CPF, cash) are entered in an `Other assets` block that you can link to the Balance Sheet, and a capacity guard warns if holdings exceed the detail table. No existing worksheet was modified — the tab only references them. The tab is colour-coded as a Level 3 (purple) tab and locked like the other engine sheets, with only the two maps and the `Other assets` cells left editable (yellow). (New feature; no change to the ledger or other tabs.)
+
 ## v1.14.1
 
 - **Dividend totals are now consistent with the FX rate override.** `All Ticker P&L` computed its per-ticker `Dividends SGD` as `SUM(local dividend amounts) × current FX`, so it ignored the per-transaction `FX Rate` entered in v1.14 and could disagree with the `Dividends collected, all time (SGD)` figure on the Stock Dashboard. It now sums the Transactions `Dividend SGD` helper column directly with a whole-column `SUMIFS`, so it reflects the actual rate recorded on each dividend and matches the Stock Dashboard and XIRR. As a bonus the range is no longer capped at ~1,000 rows. No layout change.
