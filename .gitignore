@@ -14,3 +14,12 @@ private/
 
 # Session scratch artifacts
 outputs/
+
+# Monthly Budget Tracker — private data & personal config (never publish)
+Personal Expense*.xlsx
+Monthly Budget Tracker Dennis*.xlsx
+Migrated*.xlsx
+Reconciliation*.xlsx
+*categorised draft*.xlsx
+rules.csv
+migrate_to_entries.py

@@ -1,0 +1,40 @@
+pattern,category,type,include,note
+# ---------------------------------------------------------------------------
+# EXAMPLE rules for categorize_expenses.py — safe to publish.
+# Copy this to rules.csv and add your own merchants/accounts (rules.csv is
+# gitignored so your personal merchants stay private).
+# Rules apply top-to-bottom; the FIRST matching pattern wins.
+# pattern = case-insensitive regex matched against the transaction description.
+# type = Income / Actual / One-off.  include = Y to record, N to exclude.
+# ---------------------------------------------------------------------------
+# --- INCOME ---
+salary|payroll,Salary,Income,Y,
+interest credit|bonus interest,Interest,Income,Y,
+dividend,Dividends,Income,Y,
+# --- EXCLUDED: transfers to your own accounts / savings (add your bank names) ---
+transfer to own|own account,,N,Transfer between your own accounts
+retirement|pension contribution,,N,Retirement contribution (savings)
+# --- UTILITIES / BILLS ---
+electric|power|water|utility|town council|broadband,Bills,Actual,Y,
+# --- TAX ---
+tax authority|income tax,Tax,Actual,Y,
+# --- INSURANCE ---
+insurance|life assurance|health cover,Insurance,Actual,Y,
+# --- CREDIT-CARD PAYMENTS (kept as a lump unless a matching bill is attached) ---
+credit card|card payment|CC bill,Credit Card,Actual,Y,Attach the bill to break it down by category
+# --- SUBSCRIPTIONS ---
+netflix|spotify|disney|youtube|apple.*(music|icloud|tv)|telco|mobile plan|recurring,Subscriptions,Actual,Y,
+# --- TRANSPORT ---
+bus/mrt|metro|grab|uber|taxi|ride|fuel|petrol|parking|toll,Transport,Actual,Y,
+# --- GROCERIES ---
+supermarket|grocer|fairprice|cold storage|giant|sheng siong,Groceries,Actual,Y,
+# --- DINING / DAILY FOOD ---
+restaurant|cafe|coffee|mcdonald|kfc|subway|starbucks|bakery|kitchen|food court|hawker|kopitiam,Daily Food,Actual,Y,
+# --- SHOPPING ---
+amazon|shopee|lazada|apple store|electronics|department store|uniqlo,Shopping,Actual,Y,
+# --- EXAMPLES for personal categories (edit for your own life) ---
+# gym|fitness,Health,Actual,Y,
+# childcare|preschool,Childcare,Actual,Y,
+# tuition|enrichment,Kids Enrichment,Actual,Y,
+# cleaner|helper,Household Help,Actual,Y,
+# --- ANYTHING UNMATCHED falls through to Uncategorised and is flagged for review ---

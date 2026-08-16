@@ -73,6 +73,37 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## Companion tool — Monthly Budget Tracker
+
+A separate, single-purpose workbook (`Monthly Budget Tracker.xlsx`) for month-to-month cash-flow budgeting: plan a budget and track actual spending by category, with a dashboard of trends. It's independent of the portfolio tracker above — use either or both.
+
+### How it works
+
+Everything flows from one ledger. You enter each income, expense and one-off item **once** on the **Entries** tab (Date · Category · Type · Amount · Note); the rest is automatic:
+
+- **Categories** — the master list. Add a row (Group = Income / Expense / One-off, Active = Y) and it shows up in the breakdown by itself, no formula editing (room for 20 expense categories); set one to Active = N to retire it.
+- **Budgets** — effective-dated. To change a budget, add a new row for the category with a later "Effective From" date; each month uses the latest budget on or before it, so history stays accurate as your lifestyle changes.
+- **Monthly Summary** — rebuilds monthly totals, per-category budget-vs-actual, 12-month rolling averages and cumulative cash with `SUMIFS`. It is pre-filled years ahead and each month fills in on its own as you add Entries — nothing to copy down.
+- **Dashboard** — cumulative cash, income vs spend, rolling savings ratio, and budget-vs-actual by category.
+
+Tabs are colour-coded — **green = you edit** (Entries, Budgets, Categories), **blue = automatic & locked** (Dashboard, Monthly Summary), **grey = the guide** (Instructions). Formula sheets are protected with no password (`Review → Unprotect Sheet` to change). It ships with fictional sample data (2008–2025) so every formula and chart shows a working result — clear the Entries and Budgets rows (keep the headers) to make it yours. The **Instructions** tab is the full manual.
+
+### Optional: auto-import from bank & card statements
+
+`categorize_expenses.py` turns a bank statement (plus optional credit-card bill PDFs) into a reviewable, paste-ready draft:
+
+- Rules in `rules.csv` (copy `rules.example.csv` to start) map merchants to categories — first match wins; teach a new merchant by adding one line.
+- A credit-card payment stays a single line **unless** you attach that card's bill, in which case it is broken down into per-category charges (matched by card number and reconciled to the bill's printed total).
+- Transfers to your own accounts and savings are excluded; anything uncertain is flagged for review, and a Validation tab shows a PASS / REVIEW / FAIL status.
+- It is built as a template: bank layouts (`BANK_FORMATS`) and card issuers (`CARD_FORMATS`) are pluggable registry entries with worked examples, and an unrecognised or changed format **fails loudly** rather than silently mis-reading.
+
+```text
+pip3 install openpyxl pdfplumber
+python3 categorize_expenses.py "your bank.xlsx" --bill "card bill.pdf" --month 2025-06 --out "draft.xlsx"
+```
+
+The reference parsers target the UOB One Account statement and UOB card bill formats; add a registry entry for other banks/cards (see the commented `TEMPLATE` blocks in the script).
+
 ## Changelog
 
 Release notes for every version live in [CHANGELOG.md](CHANGELOG.md).
