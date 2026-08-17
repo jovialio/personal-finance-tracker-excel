@@ -45,6 +45,9 @@ jobs:
             echo "workbook=Personal Finance Tracker $tag.xlsx"
             echo "versioned_asset=Personal.Finance.Tracker.$tag.xlsx"
             echo "stable_asset=Personal.Finance.Tracker.xlsx"
+            echo "budget_workbook=Monthly Budget Tracker.xlsx"
+            echo "budget_versioned_asset=Monthly.Budget.Tracker.$tag.xlsx"
+            echo "budget_stable_asset=Monthly.Budget.Tracker.xlsx"
           } >> "$GITHUB_OUTPUT"
 
       - name: Check out tagged source
@@ -57,6 +60,9 @@ jobs:
           WORKBOOK: ${{ steps.release.outputs.workbook }}
           VERSIONED_ASSET: ${{ steps.release.outputs.versioned_asset }}
           STABLE_ASSET: ${{ steps.release.outputs.stable_asset }}
+          BUDGET_WORKBOOK: ${{ steps.release.outputs.budget_workbook }}
+          BUDGET_VERSIONED_ASSET: ${{ steps.release.outputs.budget_versioned_asset }}
+          BUDGET_STABLE_ASSET: ${{ steps.release.outputs.budget_stable_asset }}
         run: |
           set -euo pipefail
 
@@ -67,12 +73,21 @@ jobs:
             exit 1
           fi
 
+          if [ ! -f "$BUDGET_WORKBOOK" ]; then
+            echo "::error file=$BUDGET_WORKBOOK::Expected companion workbook 'Monthly Budget Tracker.xlsx' is missing for this release tag."
+            exit 1
+          fi
+
           mkdir -p dist
           cp "$WORKBOOK" "dist/$VERSIONED_ASSET"
           cp "$WORKBOOK" "dist/$STABLE_ASSET"
+          cp "$BUDGET_WORKBOOK" "dist/$BUDGET_VERSIONED_ASSET"
+          cp "$BUDGET_WORKBOOK" "dist/$BUDGET_STABLE_ASSET"
 
           unzip -t "dist/$VERSIONED_ASSET"
           unzip -t "dist/$STABLE_ASSET"
+          unzip -t "dist/$BUDGET_VERSIONED_ASSET"
+          unzip -t "dist/$BUDGET_STABLE_ASSET"
 
       - name: Publish GitHub release
         env:
@@ -80,17 +95,23 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           VERSIONED_ASSET: ${{ steps.release.outputs.versioned_asset }}
           STABLE_ASSET: ${{ steps.release.outputs.stable_asset }}
+          BUDGET_VERSIONED_ASSET: ${{ steps.release.outputs.budget_versioned_asset }}
+          BUDGET_STABLE_ASSET: ${{ steps.release.outputs.budget_stable_asset }}
         run: |
           set -euo pipefail
 
           title="Personal Finance Tracker $TAG"
-          notes=$'Release assets:\n\n- `'"$VERSIONED_ASSET"$'` is the version-pinned workbook.\n- `'"$STABLE_ASSET"$'` is the stable latest-download alias used by README and blog links.'
+          notes=$'Release assets:\n\n- `'"$VERSIONED_ASSET"$'` is the version-pinned workbook.\n- `'"$STABLE_ASSET"$'` is the stable latest-download alias used by README and blog links.\n- `'"$BUDGET_VERSIONED_ASSET"$'` is the version-pinned Monthly Budget Tracker companion workbook.\n- `'"$BUDGET_STABLE_ASSET"$'` is the stable latest-download alias for the Monthly Budget Tracker.'
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "dist/$VERSIONED_ASSET" "dist/$STABLE_ASSET" --clobber
+            gh release upload "$TAG" \
+              "dist/$VERSIONED_ASSET" "dist/$STABLE_ASSET" \
+              "dist/$BUDGET_VERSIONED_ASSET" "dist/$BUDGET_STABLE_ASSET" --clobber
             gh release edit "$TAG" --title "$title" --latest
           else
-            gh release create "$TAG" "dist/$VERSIONED_ASSET" "dist/$STABLE_ASSET" \
+            gh release create "$TAG" \
+              "dist/$VERSIONED_ASSET" "dist/$STABLE_ASSET" \
+              "dist/$BUDGET_VERSIONED_ASSET" "dist/$BUDGET_STABLE_ASSET" \
               --title "$title" \
               --notes "$notes" \
               --latest \

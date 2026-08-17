@@ -1,40 +1,49 @@
-pattern,category,type,include,note
+pattern,category,type,include,note,tier
 # ---------------------------------------------------------------------------
 # EXAMPLE rules for categorize_expenses.py — safe to publish.
 # Copy this to rules.csv and add your own merchants/accounts (rules.csv is
 # gitignored so your personal merchants stay private).
-# Rules apply top-to-bottom; the FIRST matching pattern wins.
-# pattern = case-insensitive regex matched against the transaction description.
-# type = Income / Actual / One-off.  include = Y to record, N to exclude.
+# Columns: pattern, category, type (Income/Actual/One-off), include (Y/N),
+#          note, tier (Core / Over & above / One-off / Reimbursable / Investment).
+# Rules apply top-to-bottom; the FIRST matching pattern wins. Blank tier defaults
+# to Core (or — for income).
 # ---------------------------------------------------------------------------
 # --- INCOME ---
-salary|payroll,Salary,Income,Y,
-interest credit|bonus interest,Interest,Income,Y,
-dividend,Dividends,Income,Y,
+salary|payroll,Salary,Income,Y,,—
+interest credit|bonus interest,Interest,Income,Y,,—
+dividend,Dividends,Income,Y,,—
 # --- EXCLUDED: transfers to your own accounts / savings (add your bank names) ---
-transfer to own|own account,,N,Transfer between your own accounts
-retirement|pension contribution,,N,Retirement contribution (savings)
-# --- UTILITIES / BILLS ---
-electric|power|water|utility|town council|broadband,Bills,Actual,Y,
+transfer to own|own account,,N,Transfer between your own accounts,
+retirement|pension contribution,,N,Retirement contribution (savings),
+# --- REIMBURSABLE (you'll be paid back) ---
+claim|reimburse|work trip|official duty,Misc,Actual,Y,,Reimbursable
+# --- UTILITIES / BILLS (essential) ---
+electric|power|water|utility|town council|broadband,Bills,Actual,Y,,Core
 # --- TAX ---
-tax authority|income tax,Tax,Actual,Y,
+tax authority|income tax,Tax,Actual,Y,,Core
 # --- INSURANCE ---
-insurance|life assurance|health cover,Insurance,Actual,Y,
+insurance|life assurance|health cover,Insurance,Actual,Y,,Core
 # --- CREDIT-CARD PAYMENTS (kept as a lump unless a matching bill is attached) ---
-credit card|card payment|CC bill,Credit Card,Actual,Y,Attach the bill to break it down by category
-# --- SUBSCRIPTIONS ---
-netflix|spotify|disney|youtube|apple.*(music|icloud|tv)|telco|mobile plan|recurring,Subscriptions,Actual,Y,
-# --- TRANSPORT ---
-bus/mrt|metro|grab|uber|taxi|ride|fuel|petrol|parking|toll,Transport,Actual,Y,
-# --- GROCERIES ---
-supermarket|grocer|fairprice|cold storage|giant|sheng siong,Groceries,Actual,Y,
-# --- DINING / DAILY FOOD ---
-restaurant|cafe|coffee|mcdonald|kfc|subway|starbucks|bakery|kitchen|food court|hawker|kopitiam,Daily Food,Actual,Y,
-# --- SHOPPING ---
-amazon|shopee|lazada|apple store|electronics|department store|uniqlo,Shopping,Actual,Y,
+credit card|card payment|CC bill,Credit Card,Actual,Y,Attach the bill to break it down,Core
+# --- SUBSCRIPTIONS (discretionary) ---
+netflix|spotify|disney|youtube|apple.*(music|icloud|tv)|streaming,Subscriptions,Actual,Y,,Over & above
+# --- TRANSPORT: essential vs discretionary ---
+bus/mrt|metro|smrt|transitlink|simplygo,Transport,Actual,Y,,Core
+grab|uber|gojek|tada|taxi|comfort|ride-hail,Transport,Actual,Y,ride-hail (trimmable),Over & above
+fuel|petrol|parking|toll|erp,Transport,Actual,Y,,Core
+# --- GROCERIES (essential) ---
+supermarket|grocer|fairprice|cold storage|giant|sheng siong,Groceries,Actual,Y,,Core
+# --- DINING / DAILY FOOD (basic meals core; treat eating-out as over & above if you prefer) ---
+food court|hawker|kopitiam|canteen,Daily Food,Actual,Y,,Core
+restaurant|cafe|coffee|mcdonald|kfc|subway|starbucks|bakery|bistro,Daily Food,Actual,Y,eating out,Over & above
+# --- SHOPPING (discretionary) ---
+amazon|shopee|lazada|apple store|electronics|department store|uniqlo,Shopping,Actual,Y,,Over & above
+# --- CAPITAL / INVESTMENTS ---
+brokerage|securities|vickers|index fund|unit trust|gold,Investment,One-off,Y,,Investment
 # --- EXAMPLES for personal categories (edit for your own life) ---
-# gym|fitness,Health,Actual,Y,
-# childcare|preschool,Childcare,Actual,Y,
-# tuition|enrichment,Kids Enrichment,Actual,Y,
-# cleaner|helper,Household Help,Actual,Y,
-# --- ANYTHING UNMATCHED falls through to Uncategorised and is flagged for review ---
+# gym|fitness,Health,Actual,Y,,Core
+# childcare|preschool|infant care,Childcare,Actual,Y,,Core
+# tuition|enrichment,Kids Enrichment,Actual,Y,,Over & above
+# cleaner|helper|domestic,Household Help,Actual,Y,,Core
+# allowance for mum|parents,Parents Allowance,Actual,Y,,Core
+# --- ANYTHING UNMATCHED falls through to Uncategorised (tier Core) and is flagged ---

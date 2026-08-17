@@ -314,16 +314,18 @@ def load_rules(path, issues):
                               (row[1].strip() if len(row) > 1 else '') or '',
                               (row[2].strip() if len(row) > 2 else '') or 'Actual',
                               (row[3].strip().upper() if len(row) > 3 else 'Y') == 'Y',
-                              row[4].strip() if len(row) > 4 else ''))
+                              row[4].strip() if len(row) > 4 else '',
+                              row[5].strip() if len(row) > 5 else ''))
     except FileNotFoundError:
         issues.append(('FAIL', 'rules', f'Rules file not found: {path}'))
     return rules
 
 def classify(desc, rules):
-    for rx, cat, typ, inc, note in rules:
+    for rx, cat, typ, inc, note, tier in rules:
         if rx.search(desc):
-            return (cat or '(exclude)'), typ, inc, note
-    return 'Uncategorised', 'Actual', True, 'REVIEW - no rule matched'
+            if not tier: tier = '—' if typ == 'Income' else 'Core'
+            return (cat or '(exclude)'), typ, inc, note, tier
+    return 'Uncategorised', 'Actual', True, 'REVIEW - no rule matched', 'Core'
 
 # =====================================================================
 #  draft workbook
@@ -351,10 +353,10 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
 
     # ---- Bank tab ----
     b = out.active; b.title = 'Bank'
-    _hdr(b, ['Row', 'Date', 'Transaction', 'Out', 'In', 'Category', 'Type', 'Include?', 'Flag / Note'])
+    _hdr(b, ['Row', 'Date', 'Transaction', 'Out', 'In', 'Category', 'Type', 'Include?', 'Flag / Note', 'Tier'])
     rr = 2
     for tx in bank_rows:
-        cat, typ, inc, note = classify(tx['desc'], rules)
+        cat, typ, inc, note, tier = classify(tx['desc'], rules)
         l4 = card_last4(tx['desc'])
         is_card = bool(l4) and re.search(r'card|CC|bill payment', tx['desc'], re.I) and tx['out'] > 0
         b.cell(row=rr, column=1, value=tx['row']).font = _f(9, color='999999')
@@ -366,85 +368,89 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
         b.cell(row=rr, column=7, value=typ).font = _f()
         b.cell(row=rr, column=8, value=('Yes' if inc else 'No')).font = _f()
         b.cell(row=rr, column=9, value=note).font = _f(9)
+        b.cell(row=rr, column=10, value=('' if not inc else tier)).font = _f()
         if is_card:
             bill = bills_by4.get(l4)
             if bill and bill.get('reconciled'):
                 used_bills.add(l4)
                 b.cell(row=rr, column=8, value='Replaced')
                 b.cell(row=rr, column=9, value=f'Broken down from reconciled bill (card …{l4})')
+                b.cell(row=rr, column=10, value='')
             else:
                 # keep as lump — NEVER silently drop
-                b.cell(row=rr, column=6, value='Credit Card')
-                agg[('Credit Card', 'Actual')] += tx['out']; recon['card_lump'] += tx['out']
+                b.cell(row=rr, column=6, value='Credit Card'); b.cell(row=rr, column=10, value='Core')
+                agg[('Credit Card', 'Actual', 'Core')] += tx['out']; recon['card_lump'] += tx['out']
                 if bill is None:
                     b.cell(row=rr, column=9, value='Kept as lump — no bill attached (normal)')
-                    for cc in range(1, 10): b.cell(row=rr, column=cc).fill = INFOF
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = INFOF
                 else:
                     b.cell(row=rr, column=9, value='REVIEW - bill did NOT reconcile; kept as lump (see Validation tab)')
-                    for cc in range(1, 10): b.cell(row=rr, column=cc).fill = FLAG
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
         elif not inc:
-            for cc in range(1, 10): b.cell(row=rr, column=cc).fill = EXC
+            for cc in range(1, 11): b.cell(row=rr, column=cc).fill = EXC
             if 'REVIEW' in note: flagged += 1
         else:
             if 'REVIEW' in note:
-                for cc in range(1, 10): b.cell(row=rr, column=cc).fill = FLAG
+                for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
                 flagged += 1
             if tx['out'] > 0:
-                agg[(cat, 'Actual')] += tx['out']; recon['actual_bank'] += tx['out']
+                agg[(cat, 'Actual', tier)] += tx['out']; recon['actual_bank'] += tx['out']
             elif tx['in'] > 0 and typ == 'Income':
-                agg[(cat, 'Income')] += tx['in']; recon['income_in'] += tx['in']
+                agg[(cat, 'Income', '—')] += tx['in']; recon['income_in'] += tx['in']
         rr += 1
-    for col, w in zip('ABCDEFGHI', [6, 11, 44, 10, 10, 15, 8, 9, 40]): b.column_dimensions[col].width = w
+    for col, w in zip('ABCDEFGHIJ', [6, 11, 44, 10, 10, 15, 8, 9, 40, 13]): b.column_dimensions[col].width = w
     b.freeze_panes = 'B2'
 
     # ---- one tab per reconciled bill (drill-down) ----
     for bill in bills:
         if not bill: continue
         cbs = out.create_sheet(f'Card …{bill.get("last4","?")}'[:31])
-        _hdr(cbs, ['Merchant / Description', 'Amount', 'Category', 'Flag / Note'])
+        _hdr(cbs, ['Merchant / Description', 'Amount', 'Category', 'Tier', 'Flag / Note'])
         rr = 2
         for it in bill['items']:
             if it['credit']:
                 cbs.cell(row=rr, column=1, value=it['desc']).font = _f(9)
                 cbs.cell(row=rr, column=2, value=-it['amount']).number_format = M2
                 cbs.cell(row=rr, column=3, value='(credit — excluded)').font = _f(9)
-                for cc in range(1, 5): cbs.cell(row=rr, column=cc).fill = EXC
+                for cc in range(1, 6): cbs.cell(row=rr, column=cc).fill = EXC
             else:
-                cat, typ, inc, note = classify(it['desc'], rules)
+                cat, typ, inc, note, tier = classify(it['desc'], rules)
                 cbs.cell(row=rr, column=1, value=it['desc']).font = _f(9)
                 cbs.cell(row=rr, column=2, value=it['amount']).number_format = M2
                 cbs.cell(row=rr, column=3, value=cat).font = _f()
-                cbs.cell(row=rr, column=4, value=note).font = _f(9)
+                cbs.cell(row=rr, column=4, value=tier).font = _f()
+                cbs.cell(row=rr, column=5, value=note).font = _f(9)
                 if 'REVIEW' in note:
-                    for cc in range(1, 5): cbs.cell(row=rr, column=cc).fill = FLAG
+                    for cc in range(1, 6): cbs.cell(row=rr, column=cc).fill = FLAG
                     if bill.get('reconciled'): flagged += 1
                 if bill.get('reconciled'):
-                    agg[(cat, 'Actual')] += it['amount']; recon['actual_card'] += it['amount']
+                    agg[(cat, 'Actual', tier)] += it['amount']; recon['actual_card'] += it['amount']
             rr += 1
         st = 'RECONCILED' if bill.get('reconciled') else 'NOT USED (failed reconciliation)'
         c = cbs.cell(row=rr + 1, column=1, value=f'Status: {st}   charges {bill.get("charges",0):.2f}, '
                      f'rebates/credits {bill.get("credits",0):.2f}, printed total {bill.get("total_balance")}')
         c.font = _f(9, b=True); c.fill = OKF if bill.get('reconciled') else FAILF
-        for col, w in zip('ABCD', [46, 12, 18, 40]): cbs.column_dimensions[col].width = w
+        for col, w in zip('ABCDE', [46, 12, 18, 14, 40]): cbs.column_dimensions[col].width = w
         cbs.freeze_panes = 'A2'
 
     # ---- Entries draft ----
     ed = out.create_sheet('Entries draft')
-    _hdr(ed, ['Date', 'Category', 'Type', 'Amount', 'Note'])
+    _hdr(ed, ['Date', 'Category', 'Type', 'Tier', 'Amount', 'Note'])
     order = {'Income': 0, 'Actual': 1, 'One-off': 2}
     rr = 2
-    for (cat, typ), amt in sorted(agg.items(), key=lambda kv: (order.get(kv[0][1], 9), kv[0][0])):
+    for (cat, typ, tier), amt in sorted(agg.items(), key=lambda kv: (order.get(kv[0][1], 9), kv[0][0], kv[0][2])):
         if abs(amt) < 0.005: continue
         ed.cell(row=rr, column=1, value=month).number_format = 'yyyy-mm-dd'
         ed.cell(row=rr, column=2, value=cat).font = _f()
         ed.cell(row=rr, column=3, value=typ).font = _f()
-        ed.cell(row=rr, column=4, value=round(amt, 2)).number_format = M2
+        ed.cell(row=rr, column=4, value=tier).font = _f()
+        ed.cell(row=rr, column=5, value=round(amt, 2)).number_format = M2
         rr += 1
     ed.cell(row=rr + 1, column=2, value='Total Actual').font = _f(10, b=True)
-    ed.cell(row=rr + 1, column=4, value=f'=SUMIF(C2:C{rr-1},"Actual",D2:D{rr-1})').number_format = M2
+    ed.cell(row=rr + 1, column=5, value=f'=SUMIF(C2:C{rr-1},"Actual",E2:E{rr-1})').number_format = M2
     ed.cell(row=rr + 2, column=2, value='Total Income').font = _f(10, b=True)
-    ed.cell(row=rr + 2, column=4, value=f'=SUMIF(C2:C{rr-1},"Income",D2:D{rr-1})').number_format = M2
-    for col, w in zip('ABCDE', [12, 20, 10, 13, 30]): ed.column_dimensions[col].width = w
+    ed.cell(row=rr + 2, column=5, value=f'=SUMIF(C2:C{rr-1},"Income",E2:E{rr-1})').number_format = M2
+    for col, w in zip('ABCDEF', [12, 20, 10, 14, 13, 30]): ed.column_dimensions[col].width = w
     ed.freeze_panes = 'A2'
 
     # ---- unused bills -> issue ----
@@ -454,8 +460,8 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
                 f'Bill card …{b4} reconciled but no matching card payment was found in the bank statement.'))
 
     # ---- master reconciliation ----
-    draft_actual = round(sum(v for (c, t), v in agg.items() if t == 'Actual'), 2)
-    draft_income = round(sum(v for (c, t), v in agg.items() if t == 'Income'), 2)
+    draft_actual = round(sum(v for (c, t, tr), v in agg.items() if t == 'Actual'), 2)
+    draft_income = round(sum(v for (c, t, tr), v in agg.items() if t == 'Income'), 2)
     expected_actual = round(recon['actual_bank'] + recon['actual_card'] + recon['card_lump'], 2)
     if abs(draft_actual - expected_actual) > TOL:
         issues.append(('FAIL', 'master-recon',
