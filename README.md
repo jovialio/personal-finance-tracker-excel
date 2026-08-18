@@ -73,6 +73,24 @@ Built with Singapore in mind — CPF (OA/SA/Medisave), SRS, SSB, HDB/BSD terms a
 - The ~44% "top holding concentration" red flag in the sample is the check working as intended — small portfolios concentrate easily.
 - Not yet built (PRs welcome): benchmark comparison vs an index, YTD return, monthly return bar chart, allocation drift tracking.
 
+## Companion tool — Monthly Budget Tracker
+
+A separate, single-purpose workbook (`Monthly Budget Tracker.xlsx`) for month-to-month cash-flow budgeting: plan a budget and track actual spending by category, with a dashboard of trends. It's independent of the portfolio tracker above — use either or both.
+
+[Download the latest Monthly Budget Tracker](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Monthly.Budget.Tracker.xlsx) and open it in Excel (LibreOffice works too). It ships with fictional sample data — read the **Instructions** tab, then clear the Entries and Budgets rows to make it yours.
+
+### How it works
+
+Everything flows from one ledger. You enter each income, expense and one-off item **once** on the **Entries** tab (Date · Category · Type · Tier · Amount · Note); the rest is automatic:
+
+- **Categories** — the master list. Add a row (Group = Income / Expense / One-off, Active = Y) and it shows up in the breakdown by itself, no formula editing (room for 20 expense categories); set one to Active = N to retire it.
+- **Tier** — how essential each expense is, independent of its category: **Core** (essential baseline) · **Over & above** (discretionary, trimmable) · **One-off** (irregular/one-time) · **Reimbursable** (paid back) · **Investment** (capital). Because Tier is separate from Category, one category can split across tiers — e.g. Transport = Core $150 + Over & above $100 (cab), so you can see what's trimmable and read off your **minimum core lifestyle** vs **true lifestyle** (Core + Over & above) vs total.
+- **Budgets** — effective-dated. To change a budget, add a new row for the category with a later "Effective From" date; each month uses the latest budget on or before it, so history stays accurate as your lifestyle changes.
+- **Monthly Summary** — rebuilds monthly totals (Total Actual Spend + Total One-off = Total Combined Spend), per-category budget-vs-actual, the Core/True-lifestyle/Net-of-reimbursable tier lines, 12-month rolling averages and cumulative cash saved with `SUMIFS`. It is pre-filled years ahead and each month fills in on its own as you add Entries — nothing to copy down.
+- **Dashboard** — headline trailing-12-month-average figures (average monthly savings, true lifestyle, and core/min, each averaged over the active months within the last 12 calendar months), plus charts for cumulative cash saved, income vs spend, rolling savings ratio, expenditure-by-tier, min-vs-true-lifestyle-vs-actual, and budget-vs-actual by category.
+
+Tabs are colour-coded — **green = you edit** (Entries, Budgets, Categories), **blue = automatic & locked** (Dashboard, Monthly Summary), **grey = the guide** (Instructions). Formula sheets are protected with no password (`Review → Unprotect Sheet` to change). It ships with fictional sample data (2008–2025) so every formula and chart shows a working result — clear the Entries and Budgets rows (keep the headers) to make it yours. The **Instructions** tab is the full manual.
+
 ## Changelog
 
 Release notes for every version live in [CHANGELOG.md](CHANGELOG.md).

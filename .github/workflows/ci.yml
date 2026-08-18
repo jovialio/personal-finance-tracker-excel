@@ -133,3 +133,30 @@ jobs:
 
           unzip -t "dist/$VERSIONED_ASSET"
           unzip -t "dist/$STABLE_ASSET"
+
+      - name: Validate companion workbook (Monthly Budget Tracker)
+        run: |
+          set -euo pipefail
+
+          budget="Monthly Budget Tracker.xlsx"
+          budget_stable_asset="Monthly.Budget.Tracker.xlsx"
+          budget_stable_url="https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/$budget_stable_asset"
+
+          if [ ! -f "$budget" ]; then
+            echo "::error file=$budget::Companion workbook 'Monthly Budget Tracker.xlsx' is missing (release.yml ships it as a release asset)."
+            exit 1
+          fi
+
+          # It ships with a fixed name (no version suffix); the release workflow
+          # produces both a version-pinned and a stable-named asset from it.
+          unzip -t "$budget"
+
+          if ! grep -Fq "$budget_stable_url" README.md; then
+            echo "::error file=README.md::README must link to the stable latest-download companion workbook URL: $budget_stable_url"
+            exit 1
+          fi
+
+          if grep -Eq 'releases/latest/download/Monthly\.Budget\.Tracker\.v[0-9]' README.md; then
+            echo "::error file=README.md::README must not use a version-pinned companion asset under releases/latest/download."
+            exit 1
+          fi
