@@ -394,7 +394,8 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
                 for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
                 flagged += 1
             if tx['out'] > 0:
-                agg[(cat, 'Actual', tier)] += tx['out']; recon['actual_bank'] += tx['out']
+                otyp = typ if typ in ('Actual', 'One-off') else 'Actual'   # honour the rule's type (e.g. One-off investment); a mis-typed Income on an outflow falls back to Actual
+                agg[(cat, otyp, tier)] += tx['out']; recon['actual_bank'] += tx['out']
             elif tx['in'] > 0 and typ == 'Income':
                 agg[(cat, 'Income', '—')] += tx['in']; recon['income_in'] += tx['in']
         rr += 1
@@ -415,16 +416,23 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
                 for cc in range(1, 6): cbs.cell(row=rr, column=cc).fill = EXC
             else:
                 cat, typ, inc, note, tier = classify(it['desc'], rules)
+                # only add a bill's charges when the bill both reconciled AND was
+                # matched to a real card payment in the bank statement (used_bills)
+                matched = bool(bill.get('reconciled')) and bill.get('last4') in used_bills
+                otyp = typ if typ in ('Actual', 'One-off') else 'Actual'   # a card charge is an outflow
                 cbs.cell(row=rr, column=1, value=it['desc']).font = _f(9)
                 cbs.cell(row=rr, column=2, value=it['amount']).number_format = M2
-                cbs.cell(row=rr, column=3, value=cat).font = _f()
-                cbs.cell(row=rr, column=4, value=tier).font = _f()
+                cbs.cell(row=rr, column=3, value=('(excluded by rule)' if not inc else cat)).font = _f()
+                cbs.cell(row=rr, column=4, value=('' if not inc else tier)).font = _f()
                 cbs.cell(row=rr, column=5, value=note).font = _f(9)
-                if 'REVIEW' in note:
+                if not inc:
+                    for cc in range(1, 6): cbs.cell(row=rr, column=cc).fill = EXC
+                elif 'REVIEW' in note:
                     for cc in range(1, 6): cbs.cell(row=rr, column=cc).fill = FLAG
-                    if bill.get('reconciled'): flagged += 1
-                if bill.get('reconciled'):
-                    agg[(cat, 'Actual', tier)] += it['amount']; recon['actual_card'] += it['amount']
+                    if matched: flagged += 1
+                # honour include=N (skip) and the rule's type; never book an unmatched bill
+                if matched and inc:
+                    agg[(cat, otyp, tier)] += it['amount']; recon['actual_card'] += it['amount']
             rr += 1
         st = 'RECONCILED' if bill.get('reconciled') else 'NOT USED (failed reconciliation)'
         c = cbs.cell(row=rr + 1, column=1, value=f'Status: {st}   charges {bill.get("charges",0):.2f}, '
@@ -448,27 +456,31 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
         rr += 1
     ed.cell(row=rr + 1, column=2, value='Total Actual').font = _f(10, b=True)
     ed.cell(row=rr + 1, column=5, value=f'=SUMIF(C2:C{rr-1},"Actual",E2:E{rr-1})').number_format = M2
-    ed.cell(row=rr + 2, column=2, value='Total Income').font = _f(10, b=True)
-    ed.cell(row=rr + 2, column=5, value=f'=SUMIF(C2:C{rr-1},"Income",E2:E{rr-1})').number_format = M2
+    ed.cell(row=rr + 2, column=2, value='Total One-off').font = _f(10, b=True)
+    ed.cell(row=rr + 2, column=5, value=f'=SUMIF(C2:C{rr-1},"One-off",E2:E{rr-1})').number_format = M2
+    ed.cell(row=rr + 3, column=2, value='Total Income').font = _f(10, b=True)
+    ed.cell(row=rr + 3, column=5, value=f'=SUMIF(C2:C{rr-1},"Income",E2:E{rr-1})').number_format = M2
     for col, w in zip('ABCDEF', [12, 20, 10, 14, 13, 30]): ed.column_dimensions[col].width = w
     ed.freeze_panes = 'A2'
 
     # ---- unused bills -> issue ----
     for b4, bill in bills_by4.items():
         if b4 not in used_bills and bill.get('reconciled'):
-            issues.append(('REVIEW', 'unused-bill',
-                f'Bill card …{b4} reconciled but no matching card payment was found in the bank statement.'))
+            issues.append(('FAIL', 'unused-bill',
+                f'Bill card …{b4} reconciled but no matching card payment was found in the bank statement — '
+                f'its charges were NOT added to the draft. Attach the right bill, or confirm the card payment '
+                f'falls inside the imported statement period.'))
 
     # ---- master reconciliation ----
-    draft_actual = round(sum(v for (c, t, tr), v in agg.items() if t == 'Actual'), 2)
+    draft_out = round(sum(v for (c, t, tr), v in agg.items() if t in ('Actual', 'One-off')), 2)
     draft_income = round(sum(v for (c, t, tr), v in agg.items() if t == 'Income'), 2)
-    expected_actual = round(recon['actual_bank'] + recon['actual_card'] + recon['card_lump'], 2)
-    if abs(draft_actual - expected_actual) > TOL:
+    expected_out = round(recon['actual_bank'] + recon['actual_card'] + recon['card_lump'], 2)
+    if abs(draft_out - expected_out) > TOL:
         issues.append(('FAIL', 'master-recon',
-            f'Draft Actual {draft_actual:.2f} != sum of sources {expected_actual:.2f} — internal mismatch.'))
+            f'Draft outflow {draft_out:.2f} != sum of sources {expected_out:.2f} — internal mismatch.'))
     else:
         issues.append(('INFO', 'master-recon',
-            f'Draft ties out: Actual {draft_actual:.2f} (bank {recon["actual_bank"]:.2f} + '
+            f'Draft ties out: outflow (Actual+One-off) {draft_out:.2f} (bank {recon["actual_bank"]:.2f} + '
             f'card {recon["actual_card"]:.2f} + lumps {recon["card_lump"]:.2f}); Income {draft_income:.2f}.'))
     if flagged:
         issues.append(('REVIEW', 'flags',
