@@ -23,3 +23,8 @@ Reconciliation*.xlsx
 *categorised draft*.xlsx
 rules.csv
 migrate_to_entries.py
+
+# Statement importer — descoped from the initial release; needs testing against
+# real bank/card statements before publishing. Re-enable in a follow-up PR.
+categorize_expenses.py
+rules.example.csv

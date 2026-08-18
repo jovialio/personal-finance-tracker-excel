@@ -91,22 +91,6 @@ Everything flows from one ledger. You enter each income, expense and one-off ite
 
 Tabs are colour-coded — **green = you edit** (Entries, Budgets, Categories), **blue = automatic & locked** (Dashboard, Monthly Summary), **grey = the guide** (Instructions). Formula sheets are protected with no password (`Review → Unprotect Sheet` to change). It ships with fictional sample data (2008–2025) so every formula and chart shows a working result — clear the Entries and Budgets rows (keep the headers) to make it yours. The **Instructions** tab is the full manual.
 
-### Optional: auto-import from bank & card statements
-
-`categorize_expenses.py` turns a bank statement (plus optional credit-card bill PDFs) into a reviewable, paste-ready draft:
-
-- Rules in `rules.csv` (copy `rules.example.csv` to start) map merchants to categories — first match wins; teach a new merchant by adding one line.
-- A credit-card payment stays a single line **unless** you attach that card's bill, in which case it is broken down into per-category charges (matched by card number and reconciled to the bill's printed total).
-- Transfers to your own accounts and savings are excluded; anything uncertain is flagged for review, and a Validation tab shows a PASS / REVIEW / FAIL status.
-- It is built as a template: bank layouts (`BANK_FORMATS`) and card issuers (`CARD_FORMATS`) are pluggable registry entries with worked examples, and an unrecognised or changed format **fails loudly** rather than silently mis-reading.
-
-```text
-pip3 install openpyxl pdfplumber
-python3 categorize_expenses.py "your bank.xlsx" --bill "card bill.pdf" --month 2025-06 --out "draft.xlsx"
-```
-
-The reference parsers target the UOB One Account statement and UOB card bill formats; add a registry entry for other banks/cards (see the commented `TEMPLATE` blocks in the script).
-
 ## Changelog
 
 Release notes for every version live in [CHANGELOG.md](CHANGELOG.md).
