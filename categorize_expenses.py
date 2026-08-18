@@ -14,14 +14,20 @@ TWO DESIGN PRINCIPLES
 
 2. NO SILENT FAILURES.  Every step validates and reconciles. If a format is not
    recognised, a bank row will not parse, a rules row has an unknown Type
-   (must be Income/Actual/One-off), a card bill's line items do not reconcile to
-   its printed total, or an attached bill's total does not match the payment it
-   claims to pay, the tool records a BLOCKING issue, keeps the affected money
-   visible (a card payment stays a lump rather than vanishing), writes a
-   "Validation" tab, prints a summary, and exits non-zero. Each entry is booked
-   with the rule's own Type and Tier (an include=N line is skipped; a merchant
-   refund reduces spending; a card payment is never counted as spending). It
-   never guesses and never drops money quietly.
+   (Income/Actual/One-off) or Tier (Core/Over & above/One-off/Reimbursable/
+   Investment), a card bill's line items do not reconcile to its printed total,
+   an attached statement has no readable total, or no statement total matches the
+   card payment it should pay, the tool records a BLOCKING issue, keeps the
+   affected money visible (a card payment stays a lump rather than vanishing),
+   writes a "Validation" tab, prints a summary, and exits non-zero.
+
+   Bookings honour the rule's own Type and Tier: an include=N line is skipped; a
+   merchant refund reduces spending; a card payment is never counted as spending;
+   a deposit that matches an expense rule (e.g. a reimbursement) is booked as
+   NEGATIVE spending, and an unclassified deposit is surfaced for review rather
+   than dropped. Each card payment is matched to EXACTLY ONE statement by amount
+   (never by shared last-four digits), so two statements for the same card cannot
+   double-count. It never guesses and never drops money quietly.
 
 USAGE
 -----
@@ -322,12 +328,26 @@ def load_rules(path, issues):
                         f'Rule "{pat}" has an invalid Type "{raw_typ}" — must be Income, Actual or One-off. '
                         f'Fix rules.csv; this rule was skipped so nothing is silently mis-booked or dropped.'))
                     continue
+                raw_tier = (row[5].strip() if len(row) > 5 else '')
+                if raw_tier == '':
+                    tier = ''   # classify() defaults it (— for Income, else Core)
+                else:
+                    tier = {'core': 'Core', 'over & above': 'Over & above', 'over and above': 'Over & above',
+                            'over&above': 'Over & above', 'one-off': 'One-off', 'oneoff': 'One-off',
+                            'one off': 'One-off', 'reimbursable': 'Reimbursable', 'reimburse': 'Reimbursable',
+                            'investment': 'Investment', '—': '—', '-': '—'}.get(raw_tier.lower())
+                    if tier is None:
+                        issues.append(('FAIL', 'rules',
+                            f'Rule "{pat}" has an invalid Tier "{raw_tier}" — must be Core, Over & above, One-off, '
+                            f'Reimbursable or Investment. Fix rules.csv; this rule was skipped so nothing lands in '
+                            f'the wrong tier or vanishes from the lifestyle metrics.'))
+                        continue
                 rules.append((rx,
                               (row[1].strip() if len(row) > 1 else '') or '',
                               typ,
                               (row[3].strip().upper() if len(row) > 3 else 'Y') == 'Y',
                               row[4].strip() if len(row) > 4 else '',
-                              row[5].strip() if len(row) > 5 else ''))
+                              tier))
     except FileNotFoundError:
         issues.append(('FAIL', 'rules', f'Rules file not found: {path}'))
     return rules
@@ -359,9 +379,26 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
     agg = defaultdict(float)
     flagged = 0
     recon = {'income_in': 0.0, 'actual_bank': 0.0, 'actual_card': 0.0, 'card_lump': 0.0}
-    bills_by4 = {b['last4']: b for b in bills if b and b.get('last4')}
-    used_bills = set()      # bills actually broken down (matched card + amount)
+    # keep EVERY attached statement (two statements can share a card number); each is
+    # matched to at most one payment, by amount, and only the matched one is broken down.
+    bills_by4 = defaultdict(list)
+    for bb in bills:
+        if bb and bb.get('last4'):
+            bills_by4[bb['last4']].append(bb)
     seen_cards = set()      # last4 of card payments seen in the bank statement
+    consumed = set()        # id() of statements matched to a payment (no input mutation)
+
+    # month-scope sanity: every draft entry is dated to `month`, so warn if the bank
+    # rows actually span other months (import one statement month at a time).
+    row_months = {(t['date'].year, t['date'].month) for t in bank_rows
+                  if isinstance(t.get('date'), datetime.datetime)}
+    off_months = sorted(m for m in row_months if m != (month.year, month.month))
+    if off_months:
+        issues.append(('REVIEW', 'month-scope',
+            f'Bank rows include date(s) outside {month.strftime("%Y-%m")} '
+            f'({", ".join("%04d-%02d" % m for m in off_months)}); every draft entry is dated '
+            f'{month.strftime("%Y-%m-01")}. Import one statement month at a time for clean monthly totals.'))
+
     out = openpyxl.Workbook()
 
     # ---- Bank tab ----
@@ -384,45 +421,67 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
         b.cell(row=rr, column=10, value=('' if not inc else tier)).font = _f()
         if is_card:
             seen_cards.add(l4)
-            bill = bills_by4.get(l4)
-            # only break a payment down into a bill's charges when the bill reconciled
-            # AND its printed total matches the payment amount (guards against attaching
-            # the wrong month's statement for the same card).
-            # when the bill has a readable total, require it to match the payment; when it
-            # doesn't (already a spot-check REVIEW), fall back to last4 matching.
-            amount_ok = bool(bill) and (bill.get('total_balance') is None
-                        or abs(tx['out'] - bill['total_balance']) <= TOL)
-            if bill and bill.get('reconciled') and amount_ok:
-                used_bills.add(l4)
+            cands = [bb for bb in bills_by4.get(l4, []) if bb.get('reconciled') and id(bb) not in consumed]
+            # match this payment to exactly ONE unconsumed statement whose readable printed
+            # total equals the payment amount — never by shared card digits alone.
+            match = next((bb for bb in cands
+                          if bb.get('total_balance') is not None
+                          and abs(tx['out'] - bb['total_balance']) <= TOL), None)
+            if match is not None:
+                consumed.add(id(match))
                 b.cell(row=rr, column=8, value='Replaced')
-                b.cell(row=rr, column=9, value=f'Broken down from reconciled bill (card …{l4})')
+                b.cell(row=rr, column=9, value=f'Broken down from reconciled bill (card …{l4}, total {match["total_balance"]:.2f})')
                 b.cell(row=rr, column=10, value='')
             else:
-                # keep as lump — NEVER silently drop
+                # keep as lump — NEVER silently drop; explain why it was not broken down
                 b.cell(row=rr, column=6, value='Credit Card'); b.cell(row=rr, column=10, value='Core')
                 agg[('Credit Card', 'Actual', 'Core')] += tx['out']; recon['card_lump'] += tx['out']
-                if bill is None:
+                allb = bills_by4.get(l4, [])
+                if not allb:
                     b.cell(row=rr, column=9, value='Kept as lump — no bill attached (normal)')
                     for cc in range(1, 11): b.cell(row=rr, column=cc).fill = INFOF
-                elif not bill.get('reconciled'):
+                elif not any(bb.get('reconciled') for bb in allb):
                     b.cell(row=rr, column=9, value='REVIEW - bill did NOT reconcile; kept as lump (see Validation tab)')
                     for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
+                elif any(bb.get('reconciled') and bb.get('total_balance') is None for bb in allb):
+                    b.cell(row=rr, column=9, value='REVIEW - bill total unreadable, cannot verify against payment; '
+                           'kept as lump (fix the parser or the bill)')
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
                 else:
-                    b.cell(row=rr, column=9, value=f'REVIEW - bill …{l4} total {bill.get("total_balance")} '
-                           f'≠ payment {tx["out"]:.2f}; kept as lump (wrong statement?)')
+                    b.cell(row=rr, column=9, value=f'REVIEW - no attached statement total matches payment '
+                           f'{tx["out"]:.2f}; kept as lump (right month?)')
                     for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
         elif not inc:
             for cc in range(1, 11): b.cell(row=rr, column=cc).fill = EXC
             if 'REVIEW' in note: flagged += 1
         else:
-            if 'REVIEW' in note:
-                for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
-                flagged += 1
             if tx['out'] > 0:
+                if 'REVIEW' in note:
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
+                    flagged += 1
                 otyp = typ if typ in ('Actual', 'One-off') else 'Actual'   # honour the rule's type (e.g. One-off investment); a mis-typed Income on an outflow falls back to Actual
                 agg[(cat, otyp, tier)] += tx['out']; recon['actual_bank'] += tx['out']
-            elif tx['in'] > 0 and typ == 'Income':
-                agg[(cat, 'Income', '—')] += tx['in']; recon['income_in'] += tx['in']
+            elif tx['in'] > 0:
+                if typ == 'Income':
+                    if 'REVIEW' in note:
+                        for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
+                        flagged += 1
+                    agg[(cat, 'Income', '—')] += tx['in']; recon['income_in'] += tx['in']
+                elif 'no rule matched' in note:
+                    # unclassified deposit — do NOT guess its direction; surface it loudly
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = FLAG
+                    flagged += 1
+                    issues.append(('REVIEW', 'deposit',
+                        f'Row {tx["row"]}: unclassified deposit {tx["in"]:.2f} "{tx["desc"][:40]}" — add a rule '
+                        f'(Income, or an expense category if it is a refund/reimbursement). Left out of the draft.'))
+                else:
+                    # deposit that matches an EXPENSE rule = money back (refund / reimbursement)
+                    # -> negative spending in that category, so net-of-reimbursable is right.
+                    otyp = typ if typ in ('Actual', 'One-off') else 'Actual'
+                    agg[(cat, otyp, tier)] -= tx['in']; recon['actual_bank'] -= tx['in']
+                    b.cell(row=rr, column=9, value=((note + ' | ') if note else '')
+                           + 'deposit booked as negative spending (refund/reimbursement)')
+                    for cc in range(1, 11): b.cell(row=rr, column=cc).fill = INFOF
         rr += 1
     for col, w in zip('ABCDEFGHIJ', [6, 11, 44, 10, 10, 15, 8, 9, 40, 13]): b.column_dimensions[col].width = w
     b.freeze_panes = 'B2'
@@ -434,7 +493,7 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
         _hdr(cbs, ['Merchant / Description', 'Amount', 'Category', 'Tier', 'Flag / Note'])
         rr = 2
         for it in bill['items']:
-            matched = bool(bill.get('reconciled')) and bill.get('last4') in used_bills
+            matched = id(bill) in consumed   # this exact statement was matched to a payment
             if it['credit']:
                 # a credit is either a card PAYMENT (excluded — it is the bill payment
                 # we already handle on the bank side) or a merchant REFUND/REBATE, which
@@ -473,10 +532,15 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
                 if matched and inc:
                     agg[(cat, otyp, tier)] += it['amount']; recon['actual_card'] += it['amount']
             rr += 1
-        st = 'RECONCILED' if bill.get('reconciled') else 'NOT USED (failed reconciliation)'
+        if not bill.get('reconciled'):
+            st = 'NOT USED (failed reconciliation)'; fill = FAILF
+        elif id(bill) in consumed:
+            st = 'BROKEN DOWN (matched a card payment)'; fill = OKF
+        else:
+            st = 'RECONCILED but NOT matched to a payment — kept as lump'; fill = FLAG
         c = cbs.cell(row=rr + 1, column=1, value=f'Status: {st}   charges {bill.get("charges",0):.2f}, '
                      f'rebates/credits {bill.get("credits",0):.2f}, printed total {bill.get("total_balance")}')
-        c.font = _f(9, b=True); c.fill = OKF if bill.get('reconciled') else FAILF
+        c.font = _f(9, b=True); c.fill = fill
         for col, w in zip('ABCDE', [46, 12, 18, 14, 40]): cbs.column_dimensions[col].width = w
         cbs.freeze_panes = 'A2'
 
@@ -502,18 +566,23 @@ def build_draft(bank_rows, bills, month, rules, issues, out_path):
     for col, w in zip('ABCDEF', [12, 20, 10, 14, 13, 30]): ed.column_dimensions[col].width = w
     ed.freeze_panes = 'A2'
 
-    # ---- unused bills -> issue ----
-    for b4, bill in bills_by4.items():
-        if b4 not in used_bills and bill.get('reconciled'):
-            if b4 in seen_cards:
-                issues.append(('REVIEW', 'unused-bill',
-                    f'Bill card …{b4} reconciled and a card payment was found, but the payment amount did not '
-                    f'match the statement total — the payment was kept as a lump (did you attach the right month?).'))
-            else:
-                issues.append(('FAIL', 'unused-bill',
-                    f'Bill card …{b4} reconciled but no matching card payment was found in the bank statement — '
-                    f'its charges were NOT added to the draft. Attach the right bill, or confirm the card payment '
-                    f'falls inside the imported statement period.'))
+    # ---- attached-but-unmatched bills -> issue (one per statement, by identity) ----
+    for bill in bills:
+        if not bill or not bill.get('reconciled') or id(bill) in consumed:
+            continue
+        b4 = bill.get('last4')
+        if bill.get('total_balance') is None:
+            issues.append(('FAIL', 'unmatched-bill',
+                f'Bill card …{b4} has no readable printed total, so it could not be verified against a card '
+                f'payment — its charges were NOT added (kept as a lump). Fix the parser/bill or remove it.'))
+        elif b4 in seen_cards:
+            issues.append(('REVIEW', 'unmatched-bill',
+                f'Bill card …{b4} (total {bill.get("total_balance"):.2f}) did not match any card payment amount — '
+                f'kept as a lump (did you attach the right month, or is there a second statement for this card?).'))
+        else:
+            issues.append(('FAIL', 'unmatched-bill',
+                f'Bill card …{b4} reconciled but no card payment for that card was found in the bank statement — '
+                f'its charges were NOT added. Attach the right bill, or confirm the payment is in the imported period.'))
 
     # ---- master reconciliation ----
     draft_out = round(sum(v for (c, t, tr), v in agg.items() if t in ('Actual', 'One-off')), 2)
