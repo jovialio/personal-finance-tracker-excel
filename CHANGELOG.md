@@ -5,6 +5,7 @@ All notable changes to the Personal Finance Tracker workbook. The latest version
 ## v1.16.2
 
 - **Retirement Plan: pin your projection's starting balance and starting age.** The projection previously seeded every scenario from a live link to the Balance Sheet (`B2 = 'Balance Sheet'!E68`), so the starting point drifted whenever your Balance Sheet changed — wrong for a projection you want anchored to a moment in time, and awkward for a new user whose Balance Sheet is laid out differently. Two optional yellow inputs now sit on the tab (**row 8**): **Starting balance** and **Starting age**. Leave them blank and the projection auto-seeds exactly as before (current assets from the Balance Sheet, current age from Settings); enter a value and it pins that as the fixed anchor — `B2 = IF(StartingBalance="", 'Balance Sheet'!E68, StartingBalance)` and `A15 = IF(StartingAge="", Settings!B5, StartingAge)`. Because all three scenarios (3%/5%/8%) seed off `B2`/`A15`, one entry re-anchors them together. Only the Retirement Plan tab changed, and with the inputs blank every figure is identical.
+- **Retirement Plan: removed the frozen panes.** The tab froze the first 14 rows, so at higher zoom the lower assumption rows (CPF/SRS/Insurance estimates) and the projection header could sit inside the frozen region below the visible window — unreachable, since a frozen pane doesn't scroll. The freeze is removed so every row is reachable by normal scrolling.
 
 ## v1.16.1
 
