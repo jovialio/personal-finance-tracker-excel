@@ -2,6 +2,10 @@
 
 All notable changes to the Personal Finance Tracker workbook. The latest version is always available from the [releases page](https://github.com/jovialio/personal-finance-tracker-excel/releases/latest/download/Personal.Finance.Tracker.xlsx).
 
+## v1.16.2
+
+- **Retirement Plan: pin your projection's starting balance and starting age.** The projection previously seeded every scenario from a live link to the Balance Sheet (`B2 = 'Balance Sheet'!E68`), so the starting point drifted whenever your Balance Sheet changed — wrong for a projection you want anchored to a moment in time, and awkward for a new user whose Balance Sheet is laid out differently. Two optional yellow inputs now sit on the tab (**row 8**): **Starting balance** and **Starting age**. Leave them blank and the projection auto-seeds exactly as before (current assets from the Balance Sheet, current age from Settings); enter a value and it pins that as the fixed anchor — `B2 = IF(StartingBalance="", 'Balance Sheet'!E68, StartingBalance)` and `A15 = IF(StartingAge="", Settings!B5, StartingAge)`. Because all three scenarios (3%/5%/8%) seed off `B2`/`A15`, one entry re-anchors them together. Only the Retirement Plan tab changed, and with the inputs blank every figure is identical.
+
 ## v1.16.1
 
 - **Monthly Budget Tracker: entries roll up by month, not by exact date.** The Monthly Summary and Dashboard previously matched an entry only when it was dated to the **first of the month**, so a real transaction date such as `15 Aug` was silently left out of that month's totals. They now sum every entry whose date falls anywhere **within the calendar month** (`SUMIFS`/`COUNTIFS` over a month range), so you can enter actual transaction dates and nothing is dropped. Effective-dated budgets apply the same way. Figures are unchanged for data already dated to the first of the month.
