@@ -8,6 +8,8 @@ desktop.ini
 
 # Personal test workbooks (contain real financial data — never commit)
 *_Test*.xlsx
+*TestRun*.xlsx
+*Test Run*.xlsx
 
 # Private / stealth planning & development — do not publish
 private/
@@ -28,3 +30,23 @@ migrate_to_entries.py
 # real bank/card statements before publishing. Re-enable in a follow-up PR.
 categorize_expenses.py
 rules.example.csv
+
+# Bank / brokerage / card statement exports (real account data — never publish)
+UOB*.xlsx
+POSB*.xlsx
+posb*.xlsx
+*Account From*.xlsx
+*Statement*.pdf
+*Statement*.xlsx
+
+# Statement importer working files (scaffolded from real financial data)
+mapping.xlsx
+mapping-before-*.xlsx
+Entries draft*.xlsx
+
+# Scratch / working dirs (previews & intermediates derived from real data)
+tmp/
+.tmp/
+
+# Statement importer helper (macOS PDF backend) — descoped with the importer
+tools/
